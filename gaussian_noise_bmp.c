@@ -1,77 +1,103 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <math.h>
+#include <string.h>
 
-uint32_t xor128();
-double box_muller();
-
-int32_t main(int argc, char *argv[]){
+typedef struct{
     uint8_t img[512][512][3];
     uint8_t header[14];
     uint32_t bsize;
     int32_t width;
     int32_t height;
     uint8_t infoheader[28];
+}bmpdata;
+
+uint32_t xor128();
+double box_muller();
+
+int32_t main(int argc, char *argv[]){
+
+    // 対象画像のパスの取得
+    uint8_t path[256] = {0};
+    uint32_t pathlen;
+    puts(u8"bmpファイルの場所を入力");
+    fgets(path, 255, stdin);
+    pathlen = strlen(path);
+    path[pathlen-1] = 0; // 改行コードの削除
+
+    // ファイルを開く
     FILE *fp;
+    fp = fopen(path, "rb");
 
-    fp = fopen(argv[1], "rb");
-
-    fread(&header, sizeof(uint8_t), 14, fp);
-    fread(&bsize, sizeof(uint32_t), 1, fp);
-    fread(&width, sizeof(int32_t), 1, fp);
-    fread(&height, sizeof(int32_t), 1, fp);
-    fread(&infoheader, sizeof(uint8_t), 28, fp);
-    for(uint32_t i = 0; i < width; i++){
-        for(uint32_t j = 0; j < height; j++){
+    // bmpの構造にしたがってファイルを読み込んでいく
+    bmpdata data = {0};
+    fread(&data.header, sizeof(uint8_t), 14, fp);
+    fread(&data.bsize, sizeof(uint32_t), 1, fp);
+    fread(&data.width, sizeof(int32_t), 1, fp);
+    fread(&data.height, sizeof(int32_t), 1, fp);
+    fread(&data.infoheader, sizeof(uint8_t), 28, fp);
+    for(uint32_t i = 0; i < data.width; i++){
+        for(uint32_t j = 0; j < data.height; j++){
             for(uint32_t c = 0; c < 3; c++){
-                fread(&img[i][j][c], sizeof(uint8_t), 1, fp);
+                fread(&data.img[i][j][c], sizeof(uint8_t), 1, fp);
             }
         }
     }
 
+    // 入力画像のファイルを閉じる
     fclose(fp);
 
+    // 乱数関係用の変数
     double rand = 0.0;
     double sigma = 0.0;
     
-    printf("σを入力してください 推進:1.0以下\n");
+    // σを読み取る
+    puts(u8"σを入力してください 推奨:0.4以下");
     scanf("%lf", &sigma);
 
-    for(uint32_t i = 0; i < width; i++){
-        for(uint32_t j = 0; j < height; j++){
+    // 読み取った画素部分のRGBに正規分布乱数をかけていく
+    for(uint32_t i = 0; i < data.width; i++){
+        for(uint32_t j = 0; j < data.height; j++){
+
+            // 正規分布乱数の発生
             rand = box_muller();
             rand = sigma * rand + 1.0;
 
             for(uint32_t c = 0; c < 3; c++){
-                if(img[i][j][c] * rand > 255){
-                    img[i][j][c] = 255;
+                // 255以上となる場合は255に
+                if(data.img[i][j][c] * rand > 255){
+                    data.img[i][j][c] = 255;
                 }else{
-                    img[i][j][c] = img[i][j][c] * rand;
+                    data.img[i][j][c] = data.img[i][j][c] * rand;
                 }
             }
         }
     }
 
+    // 保存先ファイルを開く
     fp = fopen("out.bmp", "wb");
 
-    fwrite(&header, sizeof(uint8_t), 14, fp);
-    fwrite(&bsize, sizeof(uint32_t), 1, fp);
-    fwrite(&width, sizeof(int32_t), 1, fp);
-    fwrite(&height, sizeof(int32_t), 1, fp);
-    fwrite(&infoheader, sizeof(uint8_t), 28, fp);
-    for(uint32_t i = 0; i < width; i++){
-        for(uint32_t j = 0; j < height; j++){
+    // out.bmpに書き込んでいく
+    fwrite(&data.header, sizeof(uint8_t), 14, fp);
+    fwrite(&data.bsize, sizeof(uint32_t), 1, fp);
+    fwrite(&data.width, sizeof(int32_t), 1, fp);
+    fwrite(&data.height, sizeof(int32_t), 1, fp);
+    fwrite(&data.infoheader, sizeof(uint8_t), 28, fp);
+    for(uint32_t i = 0; i < data.width; i++){
+        for(uint32_t j = 0; j < data.height; j++){
             for(uint32_t c = 0; c < 3; c++){
-                fwrite(&img[i][j][c], sizeof(uint8_t), 1, fp);
+                fwrite(&data.img[i][j][c], sizeof(uint8_t), 1, fp);
             }
         }
     }
 
+    // 保存先ファイルを閉じる
     fclose(fp);
 
     return 0;
 }
 
+// 一様乱数としてxorshift法を使用
 uint32_t xor128(void) { 
     static uint32_t x = 123456789;
     static uint32_t y = 362436069;
@@ -86,6 +112,7 @@ uint32_t xor128(void) {
     return w = (w ^ (w >> 19)) ^ (t ^ (t >> 8)); 
 }
 
+// ボックスミュラー法で一様乱数から正規分布乱数に
 double box_muller(){
     uint32_t x = 0, y = 0;
     x = xor128();
@@ -99,6 +126,3 @@ double box_muller(){
 
     return Z;
 }
-
-
-
