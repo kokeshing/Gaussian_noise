@@ -1,0 +1,2 @@
+# Gaussian_noise
+ガウシアンノイズ
