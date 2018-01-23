@@ -33,14 +33,14 @@ int32_t main(int argc, char *argv[]){
 
     double rand = 0.0;
     double sigma = 0.0;
-    sigma = strtod(argv[2], NULL);
-    printf("%lf\n", sigma);
-    printf("%s\n", argv[2]);
+    
+    printf("σを入力してください 推進:1.0以下\n");
+    scanf("%lf", &sigma);
 
     for(uint32_t i = 0; i < width; i++){
         for(uint32_t j = 0; j < height; j++){
             rand = box_muller();
-            rand = 0.2 * rand + 1.0;
+            rand = sigma * rand + 1.0;
 
             for(uint32_t c = 0; c < 3; c++){
                 if(img[i][j][c] * rand > 255){
