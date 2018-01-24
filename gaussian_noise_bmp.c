@@ -20,7 +20,7 @@ int32_t main(int argc, char *argv[]){
     // 対象画像のパスの取得
     uint8_t path[256] = {0};
     uint32_t pathlen;
-    puts(u8"bmpファイルの場所を入力");
+    puts(u8"enter the path of the bmp file.");
     fgets(path, 255, stdin);
     pathlen = strlen(path);
     path[pathlen-1] = 0; // 改行コードの削除
@@ -52,7 +52,7 @@ int32_t main(int argc, char *argv[]){
     double sigma = 0.0;
     
     // σを読み取る
-    puts(u8"σを入力してください 推奨:0.4以下");
+    puts(u8"enter the value of sigma.");
     scanf("%lf", &sigma);
 
     // 読み取った画素部分のRGBに正規分布乱数をかけていく
